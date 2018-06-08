@@ -1,0 +1,20 @@
+Package: IMIabgd
+Type: Package
+Title: Analyze Tcells data with mixcr and vdjtools
+Version: 0.0.1.9002
+Date: 2018-06-06
+Author: DEBOT damien
+Maintainer: DEBOT damien <damien.debot@gmail.com>
+Description: Functions that use mixcr and vdjtools to analyse Tcells data. 
+             Easy to use for person with limited knowledge of R, Rstudio, mixcr and vdjtools. 
+             Usefull to analyse large group of files.
+License: GPL
+Encoding: UTF-8
+LazyData: true
+Imports: dplyr (>= 0.7.5),
+    stringr (>= 1.3.1),
+    readr (>= 1.1.1),
+    xlsx (>= 0.5.7)
+Suggests:
+    testthat, covr
+RoxygenNote: 6.0.1
