@@ -3,7 +3,7 @@
 #' @description change '\' into '/' and add '/' at the end if missing.
 #' @param x a character string
 #' @return the string adapted
-#' @author DEBOT Damien <damien.debot@@selor.be>
+#' @author DEBOT Damien <damien.debot@@gmail.com>
 #' @export
 correct_paths <- function(x) {
   if (!is.character(x)) stop("`x` must be a character vector.")
@@ -22,7 +22,7 @@ correct_paths <- function(x) {
 #' @param path the emplacement of the program on the disk (directory or fullpath)
 #' @param program the name of the program. Can be "mixcr" or "vdjtools"
 #' @return the path to the program
-#' @author DEBOT Damien <damien.debot@@selor.be>
+#' @author DEBOT Damien <damien.debot@@gmail.com>
 #' @importFrom magrittr %>%
 #' @importFrom stringr str_replace_all
 #' @importFrom stringr str_detect
@@ -93,7 +93,7 @@ check_path_program <- function(path, program) {
 #' @param path the path of a .txt file
 #' @param decimal the decilmark you want to use (default= ,)
 #' @return same .txt files with a new decimal separator
-#' @author DEBOT Damien <damien.debot@@selor.be>
+#' @author DEBOT Damien <damien.debot@@gmail.com>
 #' @importFrom readr read_delim
 #' @export
 convert_decimal <- function(path, decimal=",") {
@@ -136,7 +136,7 @@ convert_decimal <- function(path, decimal=",") {
 #' @param path a directory containing .txt files
 #' @param subfolder a sub-directory of path where you want to save the files
 #' @return .xlsx files
-#' @author DEBOT Damien <damien.debot@@selor.be>
+#' @author DEBOT Damien <damien.debot@@gmail.com>
 #' @import xlsx
 #' @importFrom readr read_delim
 #' @export

@@ -12,7 +12,7 @@
 #' @param ... Parameters to pass to the called functions (e.g. report_name)
 #' @return runs command lines in console. Creates .vdjca files
 #'         in the same directory than the fastq.gz files
-#' @author DEBOT Damien <damien.debot@@selor.be>
+#' @author DEBOT Damien <damien.debot@@gmail.com>
 #' @importFrom magrittr %>%
 #' @export
 #'
@@ -95,12 +95,22 @@ analyse_tcells <- function(java_param="java -Xmx4g -Xms3g -jar",
                                                   input_filename,".")
     }
 
+    # the functions return the name of the output file (or the command in string when string_only=TRUE)
     #execute the `align -OvParameters.geneFeatureToAlign=VTranscript` command
-    command_txt <- c(command_txt,align_fastq_to_vdjca(java_param=java_param,path_mixcr=path_mixcr,
-                           input_dir=input_dir_file, input_filename=input_filename,
-                           #report_name="alignmentReport",
-                           replace=replace, string_only=string_only, ...))
+    lastreturned_value <- align_fastq_to_vdjca(java_param=java_param,path_mixcr=path_mixcr,
+                                           input_dir=input_dir_file, input_filename=input_filename,
+                                           #report_name="alignmentReport",
+                                           replace=replace, string_only=string_only, ...)
+    command_txt <- c(command_txt,returned_value) # to keep all commands in string when string_only=TRUE
 
+
+    #execute the 'assemble -OcloneFactoryParameters.dParameters.absoluteMinScore=10' command
+    lastreturned_value <- assemble_vdjca_to_clns(java_param=java_param,path_mixcr=path_mixcr,
+                                                 input_dir=input_dir_file, input_filename=lastreturned_value,
+                                                 output_filename=short_input_filename,
+                                                 # report_name="assembleReport",
+                                                 replace=replace, string_only=string_only, ...)
+    command_txt <- c(command_txt,returned_value) # to keep all commands in string when string_only=TRUE
 
 
     command_txt <- c(command_txt,"")
@@ -120,14 +130,16 @@ analyse_tcells <- function(java_param="java -Xmx4g -Xms3g -jar",
 #' @param java_param a character string containing java parameters
 #' @param path_mixcr the path to mixcr.jar
 #' @param input_dir where the files are
-#' @param input_filename file name (type R1), without the extension
+#' @param input_filename file name (type R1.fastq.gz), (with or without the extension)
 #' @param report_name the name of the file alignmentReport. (without the extension)
 #'                    Set to NULL to not create the file.
 #' @param replace if TRUE, if the output file already exists, it will be replaced.
 #' @param string_only if TRUE, don't execute the command but returns it in a string
 #' @return run command line in console. Creates .vdjca files
 #'         in the same directory than the fastq.gz files
-#' @author DEBOT Damien <damien.debot@@selor.be>
+#'         Returns the name of the outputfile if string_only=FALSE
+#'         Returns command if string_only=TRUE
+#' @author DEBOT Damien <damien.debot@@gmail.com>
 #' @importFrom magrittr %>%
 #' @export
 align_fastq_to_vdjca <- function(java_param="java -Xmx4g -Xms3g -jar",
@@ -146,49 +158,53 @@ align_fastq_to_vdjca <- function(java_param="java -Xmx4g -Xms3g -jar",
 
 
   #checks args
+  {
     #java_param
-  if (!is.character(java_param)) stop("`java_param` must be a character vector of length 1.",
-                                      "e.g. `java -Xmx4g -Xms3g -jar`")
-  if (length(java_param) > 1) stop("`java_param` must be a character vector of length 1.",
-                                   "e.g. `java -Xmx4g -Xms3g -jar`")
+    if (!is.character(java_param)) stop("`java_param` must be a character vector of length 1.",
+                                        "e.g. `java -Xmx4g -Xms3g -jar`")
+    if (length(java_param) > 1) stop("`java_param` must be a character vector of length 1.",
+                                     "e.g. `java -Xmx4g -Xms3g -jar`")
     #path_mixcr
-  path_mixcr <- check_path_program(path_mixcr,program="mixcr")
+    path_mixcr <- check_path_program(path_mixcr,program="mixcr")
     #input_dir
-  if (!is.character(input_dir)) stop("`input_dir` must be a character vector of length 1.")
-  if (length(input_dir) > 1) stop("`input_dir` must be a character vector of length 1.")
-  input_dir <- correct_paths(input_dir)
-  if (!dir.exists(input_dir)) {
-    stop("`input_dir` must be a valid directory.")
-  }
+    if (!is.character(input_dir)) stop("`input_dir` must be a character vector of length 1.")
+    if (length(input_dir) > 1) stop("`input_dir` must be a character vector of length 1.")
+    input_dir <- correct_paths(input_dir)
+    if (!dir.exists(input_dir)) {
+      stop("`input_dir` must be a valid directory.")
+    }
     #input_filename
-  if (!is.character(input_filename)) stop("`input_filename` must be a character vector of length 1.")
-  if (length(input_filename) > 1) stop("`input_filename` must be a character vector of length 1.")
-  input_filename <- correct_paths(input_filename)
-  input_filename <- gsub(".fastq.gz","",input_filename) # erase file extension
-  if (!file.exists(paste0(input_dir,input_filename,".fastq.gz"))) {
-    stop("`input_filename` must be a valid file in `input_dir` directory.")
-  }
+    if (!is.character(input_filename)) stop("`input_filename` must be a character vector of length 1.")
+    if (length(input_filename) > 1) stop("`input_filename` must be a character vector of length 1.")
+    input_filename <- correct_paths(input_filename)
+    input_filename <- gsub(".fastq.gz","",input_filename) # erase file extension
+    if (!file.exists(paste0(input_dir,input_filename,".fastq.gz"))) {
+      stop("`input_filename` must be a valid file in `input_dir` directory.")
+    }
     #report_name
-  if (!is.null(report_name) && !is.character(report_name) ) {
-    stop("`report_name` must be a character vector of length 1 or NULL.")
-  }
+    if (!is.null(report_name) && !is.character(report_name) ) {
+      stop("`report_name` must be a character vector of length 1 or NULL.")
+    }
     #replace
-  if(!is.logical(replace)) stop("`replace` must be logical.")
+    if(!is.logical(replace)) stop("`replace` must be logical.")
     #string_only
-  if(!is.logical(string_only)) stop("`string_only` must be logical.")
+    if(!is.logical(string_only)) stop("`string_only` must be logical.")
+  }
+  #end checks args
 
-
+  input_ext <- ".fastq.gz"
+  output_ext <- ".vdjca"
 
   # From input_filename
   #   check if there are 2 files R1,R2
   #   define the name of the output file
   input_1 <- gsub("_R2_","_R1_",input_filename)
-  if (!file.exists(paste0(input_dir,input_1,".fastq.gz"))) {
+  if (!file.exists(paste0(input_dir,input_1,input_ext))) {
     stop(input_dir, " doesn't contains an R1 file. \n",
          "Expected file: ",input_1)
   }
   input_2 <- gsub("_R1_","_R2_",input_filename)
-  if (!file.exists(paste0(input_dir,input_1,".fastq.gz"))) {
+  if (!file.exists(paste0(input_dir,input_1,input_ext))) {
     warning(input_dir, " doesn't contains an R2 file. \n",
             "The analyse is done only with the R1 file. \n",
             "Expected file: ",input_2)
@@ -211,35 +227,148 @@ align_fastq_to_vdjca <- function(java_param="java -Xmx4g -Xms3g -jar",
       paste0("--report ",report_name,".log") #e.g.  '--report alignmentReport.log'
     },
     if(replace==TRUE) " -f " else "",                                 #e.g.  '-f'
-    paste0(input_1,".fastq.gz"),             #e.g.  'file1.fastq.gz'
-    paste0(input_2,".fastq.gz"),             #e.g.  'file2.fastq.gz'
-    paste0(output_filename,".vdjca"),         #e.g.  'output_file.vdjca'
+    paste0(input_1,input_ext),             #e.g.  'file1.fastq.gz'
+    paste0(input_2,input_ext),             #e.g.  'file2.fastq.gz'
+    paste0(output_filename,output_ext),         #e.g.  'output_file.vdjca'
     sep=" ")
 
   if(string_only==TRUE) return(command_request)
 
   #execute the command in the console
   #but only if replace = TRUE or the output file doesn't exist yet
-  if ( !(file.exists(paste0(input_dir,output_filename,".vdjca")) & replace==FALSE)) {
+  if ( !(file.exists(paste0(input_dir,output_filename,output_ext)) & replace==FALSE)) {
     inital_wd <- getwd()
     setwd(input_dir) #R active directory -> set cd in console
     #execute command
     system(command_request)
     setwd(inital_wd)
     #check that the file is created
-    if(!file.exists(paste0(input_dir,output_filename,".vdjca")))  {
-      stop("Output file: `",paste0(input_dir,output_filename,".vdjca"),"` not found.")
+    if(!file.exists(paste0(input_dir,output_filename,output_ext)))  {
+      stop("Output file: `",paste0(input_dir,output_filename,output_ext),"` not found.")
     }
   } else {
-    message(paste0("File '",paste0(input_dir,output_filename,".vdjca"),"' already exists"))
+    message(paste0("File '",paste0(input_dir,output_filename,output_ext),"' already exists"))
   }
 
-  invisible()
+  paste0(input_dir,output_filename,output_ext)
 }
 
 
 
 
+#' @title assemble_vdjca_to_clns
+#' @description execute the command : 'assemble -OcloneFactoryParameters.dParameters.absoluteMinScore=10
+#               --report assembleReport.log alignments.vdjca clones.clns'
+#' @param java_param a character string containing java parameters
+#' @param path_mixcr the path to mixcr.jar
+#' @param input_dir where the files are
+#' @param input_filename file name (type .vdjca), (with or without the extension)
+#' @param output_filename the name of the output file (without extension)
+#' @param report_name the name of the file assembleReport (without the extension)
+#'                    Set to NULL to not create the file.
+#' @param replace if TRUE, if the output file already exists, it will be replaced.
+#' @param string_only if TRUE, don't execute the command but returns it in a string
+#' @return run command line in console. Creates .clns files
+#'         in the same directory than the fastq.gz files
+# TO CHECK au dessus ----
+#'         Returns the name of the outputfile if string_only=FALSE
+#'         Returns command if string_only=TRUE
+#' @author DEBOT Damien <damien.debot@@gmail.be>
+#' @importFrom magrittr %>%
+#' @export
+assemble_vdjca_to_clns <- function(java_param="java -Xmx4g -Xms3g -jar",
+                                 path_mixcr,
+                                 input_dir,
+                                 input_filename,
+                                 output_filename,
+                                 report_name="assembleReport",
+                                 replace=FALSE,
+                                 string_only=FALSE) {
 
 
+  #TEST : java_param <- "java -Xmx4g -Xms3g -jar" ; path_mixcr <- "D:/Maria/Maria_Analysis/mixcr-2.1.7/mixcr.jar"
+  #input_dir <- 'D:/Projets R/IMIabgd/data/Gamma_SR11-20/70-SR13-Gamma_S70-6542654654221/'
+  #input_filename <- "70-SR13-Gamma_S70_L001_R1R2_001"
+  #report_name <- "assembleReport" ; replace <- FALSE ; string_only <- FALSE
+
+
+  #checks args
+  {
+    #java_param
+    if (!is.character(java_param)) stop("`java_param` must be a character vector of length 1.",
+                                        "e.g. `java -Xmx4g -Xms3g -jar`")
+    if (length(java_param) > 1) stop("`java_param` must be a character vector of length 1.",
+                                     "e.g. `java -Xmx4g -Xms3g -jar`")
+    #path_mixcr
+    path_mixcr <- check_path_program(path_mixcr,program="mixcr")
+    #input_dir
+    if (!is.character(input_dir)) stop("`input_dir` must be a character vector of length 1.")
+    if (length(input_dir) > 1) stop("`input_dir` must be a character vector of length 1.")
+    input_dir <- correct_paths(input_dir)
+    if (!dir.exists(input_dir)) {
+      stop("`input_dir` must be a valid directory.")
+    }
+    #input_filename
+    if (!is.character(input_filename)) stop("`input_filename` must be a character vector of length 1.")
+    if (length(input_filename) > 1) stop("`input_filename` must be a character vector of length 1.")
+    input_filename <- correct_paths(input_filename)
+    input_filename <- gsub(".vdjca","",input_filename) # erase file extension
+    if (!file.exists(paste0(input_dir,input_filename,".vdjca"))) {
+      stop("`input_filename` must be a valid file in `input_dir` directory.")
+    }
+    #outputfilename
+    if(is.missing(output_filename)) {
+      output_filename <- substr(input_filename,1,gregexpr("-",input_filename)[[1]][2] +1)
+    }
+    #report_name
+    if (!is.null(report_name) && !is.character(report_name) ) {
+      stop("`report_name` must be a character vector of length 1 or NULL.")
+    }
+    #replace
+    if(!is.logical(replace)) stop("`replace` must be logical.")
+    #string_only
+    if(!is.logical(string_only)) stop("`string_only` must be logical.")
+  }
+  #end checks args
+
+  input_ext <- ".vdjca"
+  output_ext <- ".clns"
+
+  #TO DO add Tcells_type ----
+  #to choose between Min10 or regular
+  #write the command
+  command_request <- paste(
+    java_param,                              #e.g.  'java -Xmx4g -Xms3g -jar'
+    path_mixcr,
+    "assemble -OcloneFactoryParameters.dParameters.absoluteMinScore=10 ",
+    if(is.null(report_name)) {
+      ""
+    } else {
+      paste0("--report ",report_name,".log") #e.g.  '--report alignmentReport.log'
+    },
+    if(replace==TRUE) " -f " else "",        #e.g.  '-f'
+    paste0(input_filename,input_ext),         #e.g.  'input_filename.vdjca'
+    paste0(output_filename,output_ext),         #e.g.  'output_file.clns
+    sep=" ")
+
+  if(string_only==TRUE) return(command_request)
+
+  #execute the command in the console
+  #but only if replace = TRUE or the output file doesn't exist yet
+  if ( !(file.exists(paste0(input_dir,output_filename,output_ext)) & replace==FALSE)) {
+    inital_wd <- getwd()
+    setwd(input_dir) #R active directory -> set cd in console
+    #execute command
+    system(command_request)
+    setwd(inital_wd)
+    #check that the file is created
+    if(!file.exists(paste0(input_dir,output_filename,output_ext)))  {
+      stop("Output file: `",paste0(input_dir,output_filename,output_ext),"` not found.")
+    }
+  } else {
+    message(paste0("File '",paste0(input_dir,output_filename,output_ext),"' already exists"))
+  }
+
+  paste0(input_dir,output_filename,output_ext)
+}
 
