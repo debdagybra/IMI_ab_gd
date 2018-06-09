@@ -35,7 +35,7 @@ check_path_program <- function(path, program) {
 
   if (!is.character(program)) stop("`program` must be a character vector of length 1.")
   if (length(program) > 1) stop("`program` must be a character vector of length 1.")
-  program <- match.arg(program, c("mixcr","vdjtools"))
+  program <- match.arg(program, c("mixcr", "vdjtools"))
 
   # run if path is a valid directory
   # find automatically the fullpath
@@ -112,11 +112,15 @@ convert_decimal <- function(path, decimal=",") {
     list_fichiers <- list.files(path = path, pattern = ".txt", full.names = FALSE)
     for (i in 1:length(list_fichiers)) {
       # load data and save in the same .txt
-      message(paste0("convert decimal format to `", decimal, "`: ",
-                     list_fichiers[i], "(", i, "/", length(list_fichiers), ")."))
+      message(paste0(
+        "convert decimal format to `", decimal, "`: ",
+        list_fichiers[i], "(", i, "/", length(list_fichiers), ")."
+      ))
       data <- suppressMessages(readr::read_delim(list_fichiers_fullpath[i], delim = "\t"))
-      write.table(data, file = list_fichiers_fullpath[i], sep = "\t",
-                  dec = decimal, row.names = FALSE)
+      write.table(data,
+        file = list_fichiers_fullpath[i], sep = "\t",
+        dec = decimal, row.names = FALSE
+      )
     }
   } else { # if path is a file
     if (file.exists(path) & substr(path, nchar(path) - 3, nchar(path)) == ".txt") {
@@ -163,8 +167,10 @@ txt_to_excel <- function(path, subfolder=NULL) {
     list_fichiers_fullpath <- list.files(path = path, pattern = ".txt", full.names = TRUE)
     list_fichiers <- list.files(path = path, pattern = ".txt", full.names = FALSE)
     for (i in 1:length(list_fichiers)) {
-      message(paste0("convert file (", i, "/", length(list_fichiers), ") : ",
-                     list_fichiers[i], " to .xlsx"))
+      message(paste0(
+        "convert file (", i, "/", length(list_fichiers), ") : ",
+        list_fichiers[i], " to .xlsx"
+      ))
       # load data
       data <- suppressMessages(readr::read_delim(list_fichiers_fullpath[i], delim = "\t"))
       # save as xlsx
