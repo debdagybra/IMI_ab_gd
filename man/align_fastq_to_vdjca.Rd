@@ -5,8 +5,8 @@
 \title{align_fastq_to_vdjca}
 \usage{
 align_fastq_to_vdjca(java_param = "java -Xmx4g -Xms3g -jar", path_mixcr,
-  input_dir, input_filename, report_name = "alignmentReport",
-  replace = FALSE, string_only = FALSE)
+  input_dir, input_filename, output_filename = "auto",
+  report_name = "alignmentReport", replace = FALSE, string_only = FALSE)
 }
 \arguments{
 \item{java_param}{a character string containing java parameters}
@@ -15,7 +15,7 @@ align_fastq_to_vdjca(java_param = "java -Xmx4g -Xms3g -jar", path_mixcr,
 
 \item{input_dir}{where the files are}
 
-\item{input_filename}{file name (type R1), without the extension}
+\item{input_filename}{file name (type R1.fastq.gz), (with or without the extension)}
 
 \item{report_name}{the name of the file alignmentReport. (without the extension)
 Set to NULL to not create the file.}
@@ -27,10 +27,12 @@ Set to NULL to not create the file.}
 \value{
 run command line in console. Creates .vdjca files
         in the same directory than the fastq.gz files
+        Returns the name of the outputfile if string_only=FALSE
+        Returns command if string_only=TRUE
 }
 \description{
 execute the command : 'align -OvParameters.geneFeatureToAlign=VTranscript
 }
 \author{
-DEBOT Damien <damien.debot@selor.be>
+DEBOT Damien <damien.debot@gmail.com>
 }

@@ -16,5 +16,5 @@ the string adapted
 change '\' into '/' and add '/' at the end if missing.
 }
 \author{
-DEBOT Damien <damien.debot@selor.be>
+DEBOT Damien <damien.debot@gmail.com>
 }

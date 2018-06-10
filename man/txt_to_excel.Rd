@@ -18,5 +18,5 @@ txt_to_excel(path, subfolder = NULL)
 convert .txt file to .xlsx file and change decimalmark to `,`.
 }
 \author{
-DEBOT Damien <damien.debot@selor.be>
+DEBOT Damien <damien.debot@gmail.com>
 }

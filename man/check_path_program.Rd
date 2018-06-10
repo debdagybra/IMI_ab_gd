@@ -18,5 +18,5 @@ the path to the program
 check if the path to a program (.jar) is valid
 }
 \author{
-DEBOT Damien <damien.debot@selor.be>
+DEBOT Damien <damien.debot@gmail.com>
 }

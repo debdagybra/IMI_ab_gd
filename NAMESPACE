@@ -2,9 +2,11 @@
 
 export(align_fastq_to_vdjca)
 export(analyse_tcells)
+export(assemble_vdjca_to_clns)
 export(check_path_program)
 export(convert_decimal)
 export(correct_paths)
+export(run_command_vdj)
 export(txt_to_excel)
 import(xlsx)
 importFrom(magrittr,"%>%")

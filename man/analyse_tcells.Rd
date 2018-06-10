@@ -34,5 +34,5 @@ runs command lines in console. Creates .vdjca files
 execute a list of commmand on all .fastq.gz files in `input_dir`
 }
 \author{
-DEBOT Damien <damien.debot@selor.be>
+DEBOT Damien <damien.debot@gmail.com>
 }

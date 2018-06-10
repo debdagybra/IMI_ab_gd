@@ -18,5 +18,5 @@ same .txt files with a new decimal separator
 change decimalmark to `,` in .txt files.
 }
 \author{
-DEBOT Damien <damien.debot@selor.be>
+DEBOT Damien <damien.debot@gmail.com>
 }
