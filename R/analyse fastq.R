@@ -333,24 +333,16 @@ run_command_vdj <- function(java_param="java -Xmx4g -Xms3g -jar",
                             path_vdjtools="",
                             path_mixcr="",
                             input_dir,
-                            input_filename,
+                            input_filename="auto",
                             input_ext,
                             check_input_filename=TRUE,
-                            output_filename="",
+                            output_filename="auto",
                             output_ext,
                             command_vdj,
                             report_name="",
                             replace=FALSE,
                             string_only=FALSE) {
 
-  # TO DO ----
-  # fusionner args:
-  # input_filename + input_ext  => difficile pour .fastq.gz
-  # output_filename + output_ext
-
-  # TO DO ----
-  # if input_filename is empty
-  # load all files in loop
 
   # TEST : java_param <- "java -Xmx4g -Xms3g -jar" ; path_mixcr <- "D:/Maria/Maria_Analysis/mixcr-2.1.7/mixcr.jar"
   # input_dir <- 'D:/Projets R/IMIabgd/data/Gamma_SR11-20/70-SR13-Gamma_S70-6542654654221/'
@@ -379,19 +371,29 @@ run_command_vdj <- function(java_param="java -Xmx4g -Xms3g -jar",
     if (path_mixcr != "") path_mixcr <- check_path_program(path_mixcr, program = "mixcr")
     # input_dir
     if (!is.character(input_dir)) stop("`input_dir` must be a character vector of length 1.")
-    if (length(input_dir) > 1) stop("`input_dir` must be a character vector of length 1.")
+    if (length(input_filename) > 1 & length(input_dir)!= length(input_filename) ) {
+      stop("`input_dir` must be a character vector of length 1 or equal to length of input_filename.","\n",
+           "Length of `input_dir`: ",length(input_dir),"\n",
+           "Length of `input_filename`: ",length(input_filename))
+    }
     input_dir <- correct_paths(input_dir)
-    if (!dir.exists(input_dir)) {
-      stop("`input_dir` must be a valid directory.")
+    if (any(!dir.exists(input_dir))) {
+      stop("`input_dir` must be a valid directory.","\n",
+          "Invalid: ","\n",
+          paste(input_dir[!dir.exists(input_dir)], collapse="\n")
+          )
     }
     # check_input_filename
     if (!is.logical(check_input_filename)) stop("`check_input_filename` must be TRUE or FALSE")
     # input_ext
+    if (missing(input_ext)) {
+      stop("`input_ext` is missing.")
+    }
     if (!is.character(input_ext)) {
       stop("`input_ext` must be a character vector of length 1, starting with a dot.")
     }
-    if (nchar(input_ext) == 0 & nchar(input_filename) > 0) {
-      stop("`input_ext` can't be empty if `input_filename` isn't also empty.")
+    if (nchar(input_ext) == 0) {
+      stop("`input_ext` must be a non-empty character vector of length 1, starting with a dot.")
     }
     if (substr(input_ext, 1, 1) != ".") {
       stop(
@@ -400,11 +402,24 @@ run_command_vdj <- function(java_param="java -Xmx4g -Xms3g -jar",
       )
     }
     # input_filename
-    if (!is.character(input_filename)) stop("`input_filename` must be a character vector of length 1.")
-    if (length(input_filename) > 1) stop("`input_filename` must be a character vector of length 1.")
+    if (!is.character(input_filename)) stop("`input_filename` must be a character vector.")
+    # if (length(input_filename) > 1) stop("`input_filename` must be a character vector.")
+    if (all(input_filename %in% c("","auto"))) {
+      input_filename <- list.files(
+        path = input_dir, recursive = TRUE,
+        full.names = TRUE, pattern = input_ext
+      ) %>%
+        .[substr(., nchar(.) - nchar(input_ext) + 1, nchar(.)) == input_ext] %>%
+        gsub("//", "/", .) %>%
+        unique()
+      # input_dir for each file
+      input_dir <- paste0(dirname(input_filename), "/")
+      input_filename <- basename(input_filename)
+    }
+
     input_filename <- correct_paths(input_filename)
     if (check_input_filename == TRUE) input_filename <- gsub(input_ext, "", input_filename) # erase file extension
-    if (!file.exists(paste0(input_dir, input_filename, input_ext)) & check_input_filename == TRUE) {
+    if (any( !file.exists(paste0(input_dir, input_filename, input_ext)) & check_input_filename == TRUE) ) {
       stop(
         "`input_filename`+`input_ext` must be a valid file in `input_dir` directory.", "\n",
         "Your file: ", input_filename, input_ext, " doesn't exist in ", input_dir, "."
@@ -412,14 +427,28 @@ run_command_vdj <- function(java_param="java -Xmx4g -Xms3g -jar",
     }
 
     # outputfilename
-    if (missing(output_filename)) {
-      output_filename <- substr(input_filename, 1, gregexpr("-", input_filename)[[1]][2] + 1)
+    if (all(output_filename=="auto")) {
+      if(any(is.na(gregexpr("-", input_filename)[[1]][2]))) {
+        stop(
+          "`output_filename` can't be determined automatically because ",
+          "at least one of the files doensn't contain `-` in his title.", "\n",
+          "Your file(s): ", "\n", paste(paste0(input_filename,input_ext), collapse="\n")
+        )
+      } else {
+        output_filename <- substr(input_filename, 1, gregexpr("-", input_filename)[[1]][2] + 1)
+      }
+    }
+    if (length(output_filename) == 1 & length(input_filename) > 1) {
+      output_filename <- rep(output_filename, length(input_filename))
+    }
+    if (length(output_filename) != length(input_filename)) {
+      stop("`output_ext` must be a character vector with the same length than `input_filename`.")
     }
     # output_ext
     if (!is.character(output_ext)) {
       stop("`output_ext` must be a character vector of length 1, starting with a dot.")
     }
-    if (nchar(output_ext) == 0 & nchar(output_filename) > 0) {
+    if (any(nchar(output_ext) == 0 & nchar(output_filename) > 0)) {
       stop("`output_ext` can't be empty if `output_filename` isn't also empty.")
     }
     if (nchar(output_ext) > 0 && substr(output_ext, 1, 1) != ".") {
@@ -440,60 +469,74 @@ run_command_vdj <- function(java_param="java -Xmx4g -Xms3g -jar",
   }
   # end checks args
 
-  # write the command
-  command_request <- paste(
-    java_param, # e.g.  'java -Xmx4g -Xms3g -jar'
-    path_vdjtools,
-    path_mixcr,
-    command_vdj,
-    if (report_name == "") {
-      report_name
-    } else {
-      paste0("--report ", report_name, ".log") # e.g.  '--report alignmentReport.log'
-    },
-    if (replace == TRUE) "-f" else "", # e.g.  '-f'
-    paste0(
-      input_filename,
-      if (check_input_filename == TRUE) {
-        input_ext
+  command_request <- character(0)
+  for (i in 1:length(input_filename)) {
+    # write the command(s)
+    command_request <- c(command_request, paste(
+      java_param, # e.g.  'java -Xmx4g -Xms3g -jar'
+      path_vdjtools,
+      path_mixcr,
+      command_vdj,
+      if (report_name == "") {
+        report_name
       } else {
-        ""
-      }
-    ), # e.g.  'input_filename.vdjca'
-    paste0(output_filename, output_ext), # e.g.  'output_file.clns
-    sep = " "
-  )
-
+        paste0("--report ", report_name, ".log") # e.g.  '--report alignmentReport.log'
+      },
+      if (replace == TRUE) "-f" else "", # e.g.  '-f'
+      paste0(
+        input_filename[i],
+        if (check_input_filename == TRUE) {
+          input_ext
+        } else {
+          ""
+        }
+      ), # e.g.  'input_filename.vdjca'
+      paste0(output_filename[i], output_ext), # e.g.  'output_file.clns
+      sep = " "
+    ))
+  }
   if (string_only == TRUE) return(command_request)
 
   # execute the command in the console
   # but only if replace = TRUE or the output file doesn't exist yet
-  if (!(file.exists(paste0(input_dir, output_filename, output_ext)) & replace == FALSE)) {
-    inital_wd <- getwd()
-    setwd(input_dir) # R active directory -> set cd in console
-    # execute command
-    # status: 0 = success / 1 = error => replaced by the error message
-    status <- tryCatch(attributes(system(command_request, intern = TRUE))$status,
-      warning = function(w) conditionMessage(w),
-      error = function(e) conditionMessage(e)
-    )
-    setwd(inital_wd)
-    if (status != 0) {
-      stop(
-        "Your command line ended with an error.", "\n",
-        "The reason might be that:", "\n",
-        " - the command does not exist or contains an error ", "\n",
-        " - a required argument is missing or incorrect ", "\n", "\n",
-        status
+  for (i in 1:length(input_filename)) {
+    if (length(input_filename) > 1) {
+      message(paste0(
+        "Processing file (", i, "/", length(input_filename), ") : ",
+        paste0(input_filename[i], input_ext)
+      ))
+    }
+    if (!(file.exists(paste0(input_dir[i], output_filename[i], output_ext)) & replace == FALSE)) {
+      inital_wd <- getwd()
+      setwd(input_dir[i]) # R active directory -> set cd in console
+      # execute command
+      # status: 0 = success / 1 = error => replaced by the error message
+      status <- suppressWarnings(tryCatch(system(command_request[i], intern = TRUE),
+        warning = function(w) list(rvalue=system(command_request[i], intern = TRUE),
+                                   warn=conditionMessage(w)),
+        error = function(e) list(rvalue=system(command_request[i], intern = TRUE),
+                                 err=conditionMessage(e)))
       )
-    }
+      setwd(inital_wd)
+      if (is.list(status) && attributes(status[[1]])$status != 0) {
+        stop(
+          "Your command line ended with an error.", "\n",
+          "The reason might be that:", "\n",
+          " - the command does not exist or contains an error ", "\n",
+          " - a required argument is missing or incorrect ", "\n", "\n",
+          status[[2]]
+        )
+      } else {
+        cat(status)
+      }
 
-    # check that the file is created
-    if (!file.exists(paste0(input_dir, output_filename, output_ext))) {
-      stop("Output file: `", paste0(input_dir, output_filename, output_ext), "` not found.")
+      # check that the file is created
+      if (!file.exists(paste0(input_dir[i], output_filename[i], output_ext))) {
+        warning("Output file: `", paste0(input_dir[i], output_filename[i], output_ext), "` not found.")
+      }
+    } else {
+      message(paste0("File '", paste0(input_dir[i], output_filename[i], output_ext), "' already exists and is not replaced."))
     }
-  } else {
-    message(paste0("File '", paste0(input_dir, output_filename, output_ext), "' already exists"))
   }
 
   paste0(input_dir, output_filename, output_ext)

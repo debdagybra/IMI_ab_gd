@@ -10,9 +10,10 @@ correct_paths <- function(x) {
 
   x <- gsub("([/\\])", "/", x)
   # add / at the end only if it's an existing directory
-  if (dir.exists(x)) {
-    if (substr(x, nchar(x), nchar(x)) != "/") x <- paste0(x, "/")
-  }
+  x <- ifelse(dir.exists(x) & substr(x, nchar(x), nchar(x)) != "/",
+    yes = paste0(x, "/"),
+    no = x
+  )
   x
 }
 

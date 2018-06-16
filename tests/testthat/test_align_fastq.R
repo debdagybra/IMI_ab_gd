@@ -23,6 +23,7 @@ test_that("align_fastq_to_vdjca gives correct command to console with R1_R2", {
 })
 
 test_that("align_fastq_to_vdjca gives correct command to console with R1 only", {
+  skip("align_fastq_to_vdjca gives correct command to console with R1 only")
   # to do with files in data_raw
   # expect_equal(
   #   align_fastq_to_vdjca(
@@ -44,6 +45,7 @@ test_that("align_fastq_to_vdjca gives correct command to console with R1 only", 
 })
 
 test_that("align_fastq_to_vdjca gives an error if `input_filename` is only an R2 file", {
+  skip("align_fastq_to_vdjca gives an error if `input_filename` is only an R2 file")
   # to do with files in data_raw
   # expect_error(
   #   align_fastq_to_vdjca(

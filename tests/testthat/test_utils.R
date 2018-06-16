@@ -4,6 +4,9 @@ context("check the utils functions")
 test_that("correct_paths works only with character vector.", {
   expect_error(correct_paths(c(1,2,3)),"`x` must be a character vector.")
 })
+test_that("correct_paths works with vector of length > 1.", {
+  expect_equal(correct_paths(c("1","2","3")),c("1","2","3"))
+})
 test_that("correct_paths changes `\` into `/`.", {
   expect_equal(correct_paths("\\\\test\\package\\"),"//test/package/")
   expect_equal(correct_paths("\\\\test/package\\"),"//test/package/")
