@@ -12,6 +12,7 @@ test_that("run_command_vdj gives correct command to console with user's specific
       input_filename = "somefile",
       input_ext = ".dd",
       check_input_filename = FALSE,
+      output_dir = "D:/",
       output_filename = "res_somefile",
       output_ext = ".rdd",
       command_vdj = "my own command",
@@ -29,7 +30,7 @@ test_that("run_command_vdj gives correct command to console with align.", {
       java_param = "java -Xmx4g -Xms3g -jar",
       path_vdjtools = "",
       path_mixcr = "D:/Maria/Maria_Analysis/mixcr-2.1.7/mixcr.jar",
-      input_dir = "D:/Projets R/IMIabgd/data/Gamma_SR11-20/70-SR13-Gamma_S70-6542654654221/",
+      input_dir = "./data/Gamma_SR11-20/70-SR13-Gamma_S70-6542654654221/",
       input_filename = "70-SR13-Gamma_S70_L001_R1_001.fastq.gz 70-SR13-Gamma_S70_L001_R2_001.fastq.gz",
       input_ext = ".fastq.gz",
       check_input_filename = FALSE,
@@ -55,22 +56,49 @@ test_that("run_command_vdj gives correct command to console with assemble.", {
       java_param = "java -Xmx4g -Xms3g -jar",
       path_vdjtools = "",
       path_mixcr = "D:/Maria/Maria_Analysis/mixcr-2.1.7/mixcr.jar",
-      input_dir = "D:/Projets R/IMIabgd/data/Gamma_SR11-20/70-SR13-Gamma_S70-6542654654221/",
+      input_dir = "./data/Gamma_SR11-20/70-SR13-Gamma_S70-6542654654221/",
       input_filename = "70-SR13-Gamma_S70_L001_R1R2_001",
       input_ext = ".vdjca",
       check_input_filename = TRUE,
       output_filename = "70-SR13-G",
       output_ext = ".clns",
       command_vdj = "assemble -OcloneFactoryParameters.dParameters.absoluteMinScore=10",
-      report_name = "alignmentReport",
+      report_name = "assembleReport",
       replace = FALSE,
       string_only = TRUE
     ),
     paste0(
       "java -Xmx4g -Xms3g -jar  D:/Maria/Maria_Analysis/mixcr-2.1.7/mixcr.jar ",
       "assemble -OcloneFactoryParameters.dParameters.absoluteMinScore=10 ",
-      "--report alignmentReport.log  70-SR13-Gamma_S70_L001_R1R2_001.vdjca ",
+      "--report assembleReport.log  ",
+      "70-SR13-Gamma_S70_L001_R1R2_001.vdjca ",
       "70-SR13-G.clns"
+    )
+  )
+})
+
+test_that("run_command_vdj gives correct command to console with exportClones.", {
+  expect_equal(
+    run_command_vdj(
+      java_param = "java -Xmx4g -Xms3g -jar",
+      path_vdjtools = "",
+      path_mixcr = "D:/Maria/Maria_Analysis/mixcr-2.1.7/mixcr.jar",
+      input_dir = "./data/Gamma_SR11-20/70-SR13-Gamma_S70-6542654654221/",
+      input_filename = "70-SR13-G",
+      input_ext = ".clns",
+      check_input_filename = TRUE,
+      output_filename = "70-SR13-G_clonesMin10",
+      output_ext = ".txt",
+      command_vdj = "exportClones --chains TRG",
+      report_name = "",
+      replace = FALSE,
+      string_only = TRUE
+    ),
+    paste0(
+      "java -Xmx4g -Xms3g -jar  D:/Maria/Maria_Analysis/mixcr-2.1.7/mixcr.jar ",
+      "exportClones --chains TRG   ",
+      "70-SR13-G.clns ",
+      "70-SR13-G_clonesMin10.txt"
     )
   )
 })
@@ -82,7 +110,7 @@ test_that("run_command_vdj gives correct command to console when input_filename 
       java_param = "java -Xmx4g -Xms3g -jar",
       path_vdjtools = "",
       path_mixcr = "D:/Maria/Maria_Analysis/mixcr-2.1.7/mixcr.jar",
-      input_dir = "D:/Projets R/IMIabgd/data/Gamma_SR11-20/",
+      input_dir = "./data/Gamma_SR11-20/",
       input_filename = "auto",
       input_ext = ".vdjca",
       check_input_filename = TRUE,
@@ -93,18 +121,21 @@ test_that("run_command_vdj gives correct command to console when input_filename 
       replace = FALSE,
       string_only = TRUE
     ),
-    c(paste0(
-      "java -Xmx4g -Xms3g -jar  D:/Maria/Maria_Analysis/mixcr-2.1.7/mixcr.jar ",
-      "assemble -OcloneFactoryParameters.dParameters.absoluteMinScore=10 ",
-      "--report assembleReport.log  70-SR13-Gamma_S70_L001_R1R2_001.vdjca ",
-      "70-SR13-G.clns"
-    ),
-    paste0(
-      "java -Xmx4g -Xms3g -jar  D:/Maria/Maria_Analysis/mixcr-2.1.7/mixcr.jar ",
-      "assemble -OcloneFactoryParameters.dParameters.absoluteMinScore=10 ",
-      "--report assembleReport.log  71-SR14-Gamma_S71_L001_R1R2_001.vdjca ",
-      "71-SR14-G.clns"
-    )
+    c(
+      paste0(
+        "java -Xmx4g -Xms3g -jar  D:/Maria/Maria_Analysis/mixcr-2.1.7/mixcr.jar ",
+        "assemble -OcloneFactoryParameters.dParameters.absoluteMinScore=10 ",
+        "--report assembleReport.log  ",
+        "70-SR13-Gamma_S70_L001_R1R2_001.vdjca ",
+        "70-SR13-G.clns"
+      ),
+      paste0(
+        "java -Xmx4g -Xms3g -jar  D:/Maria/Maria_Analysis/mixcr-2.1.7/mixcr.jar ",
+        "assemble -OcloneFactoryParameters.dParameters.absoluteMinScore=10 ",
+        "--report assembleReport.log  ",
+        "71-SR14-Gamma_S71_L001_R1R2_001.vdjca ",
+        "71-SR14-G.clns"
+      )
     )
   )
 })
@@ -115,9 +146,11 @@ test_that("run_command_vdj gives correct command to console when input_filename 
       java_param = "java -Xmx4g -Xms3g -jar",
       path_vdjtools = "",
       path_mixcr = "D:/Maria/Maria_Analysis/mixcr-2.1.7/mixcr.jar",
-      input_dir = c("D:/Projets R/IMIabgd/data/Gamma_SR11-20/70-SR13-Gamma_S70-6542654654221/",
-                    "D:/Projets R/IMIabgd/data/Gamma_SR11-20/71-SR14-Gamma_S71-516541r2vrf541v/"),
-      input_filename = c("70-SR13-Gamma_S70_L001_R1R2_001","71-SR14-Gamma_S71_L001_R1R2_001"),
+      input_dir = c(
+        "./data/Gamma_SR11-20/70-SR13-Gamma_S70-6542654654221/",
+        "./data/Gamma_SR11-20/71-SR14-Gamma_S71-516541r2vrf541v/"
+      ),
+      input_filename = c("70-SR13-Gamma_S70_L001_R1R2_001", "71-SR14-Gamma_S71_L001_R1R2_001"),
       input_ext = ".vdjca",
       check_input_filename = TRUE,
       output_filename = "auto",
@@ -127,21 +160,25 @@ test_that("run_command_vdj gives correct command to console when input_filename 
       replace = FALSE,
       string_only = TRUE
     ),
-    c(paste0(
-      "java -Xmx4g -Xms3g -jar  D:/Maria/Maria_Analysis/mixcr-2.1.7/mixcr.jar ",
-      "assemble -OcloneFactoryParameters.dParameters.absoluteMinScore=10 ",
-      "--report assembleReport.log  70-SR13-Gamma_S70_L001_R1R2_001.vdjca ",
-      "70-SR13-G.clns"
-    ),
-    paste0(
-      "java -Xmx4g -Xms3g -jar  D:/Maria/Maria_Analysis/mixcr-2.1.7/mixcr.jar ",
-      "assemble -OcloneFactoryParameters.dParameters.absoluteMinScore=10 ",
-      "--report assembleReport.log  71-SR14-Gamma_S71_L001_R1R2_001.vdjca ",
-      "71-SR14-G.clns"
-    )
+    c(
+      paste0(
+        "java -Xmx4g -Xms3g -jar  D:/Maria/Maria_Analysis/mixcr-2.1.7/mixcr.jar ",
+        "assemble -OcloneFactoryParameters.dParameters.absoluteMinScore=10 ",
+        "--report assembleReport.log  ",
+        "70-SR13-Gamma_S70_L001_R1R2_001.vdjca ",
+        "70-SR13-G.clns"
+      ),
+      paste0(
+        "java -Xmx4g -Xms3g -jar  D:/Maria/Maria_Analysis/mixcr-2.1.7/mixcr.jar ",
+        "assemble -OcloneFactoryParameters.dParameters.absoluteMinScore=10 ",
+        "--report assembleReport.log  ",
+        "71-SR14-Gamma_S71_L001_R1R2_001.vdjca ",
+        "71-SR14-G.clns"
+      )
     )
   )
 })
+
 
 test_that("run_command_vdj gives correct command to console with replace=TRUE.", {
   expect_equal(
@@ -149,7 +186,7 @@ test_that("run_command_vdj gives correct command to console with replace=TRUE.",
       java_param = "java -Xmx4g -Xms3g -jar",
       path_vdjtools = "",
       path_mixcr = "D:/Maria/Maria_Analysis/mixcr-2.1.7/mixcr.jar",
-      input_dir = "D:/Projets R/IMIabgd/data/Gamma_SR11-20/70-SR13-Gamma_S70-6542654654221/",
+      input_dir = "./data/Gamma_SR11-20/70-SR13-Gamma_S70-6542654654221/",
       input_filename = "70-SR13-Gamma_S70_L001_R1R2_001",
       input_ext = ".vdjca",
       check_input_filename = TRUE,
@@ -163,7 +200,8 @@ test_that("run_command_vdj gives correct command to console with replace=TRUE.",
     paste0(
       "java -Xmx4g -Xms3g -jar  D:/Maria/Maria_Analysis/mixcr-2.1.7/mixcr.jar ",
       "assemble -OcloneFactoryParameters.dParameters.absoluteMinScore=10 ",
-      "--report assembleReport.log -f 70-SR13-Gamma_S70_L001_R1R2_001.vdjca ",
+      "--report assembleReport.log -f ",
+      "70-SR13-Gamma_S70_L001_R1R2_001.vdjca ",
       "70-SR13-G.clns"
     )
   )
@@ -175,7 +213,7 @@ test_that("run_command_vdj gives correct command to console with specific `repor
       java_param = "java -Xmx4g -Xms3g -jar",
       path_vdjtools = "",
       path_mixcr = "D:/Maria/Maria_Analysis/mixcr-2.1.7/mixcr.jar",
-      input_dir = "D:/Projets R/IMIabgd/data/Gamma_SR11-20/70-SR13-Gamma_S70-6542654654221/",
+      input_dir = "./data/Gamma_SR11-20/70-SR13-Gamma_S70-6542654654221/",
       input_filename = "70-SR13-Gamma_S70_L001_R1R2_001",
       input_ext = ".vdjca",
       check_input_filename = TRUE,
@@ -189,17 +227,18 @@ test_that("run_command_vdj gives correct command to console with specific `repor
     paste0(
       "java -Xmx4g -Xms3g -jar  D:/Maria/Maria_Analysis/mixcr-2.1.7/mixcr.jar ",
       "assemble -OcloneFactoryParameters.dParameters.absoluteMinScore=10 ",
-      "--report testReport.log  70-SR13-Gamma_S70_L001_R1R2_001.vdjca ",
+      "--report testReport.log  ",
+      "70-SR13-Gamma_S70_L001_R1R2_001.vdjca ",
       "70-SR13-G.clns"
     )
   )
-  #same but with the extension in the argument `report_name`
+  # same but with the extension in the argument `report_name`
   expect_equal(
     run_command_vdj(
       java_param = "java -Xmx4g -Xms3g -jar",
       path_vdjtools = "",
       path_mixcr = "D:/Maria/Maria_Analysis/mixcr-2.1.7/mixcr.jar",
-      input_dir = "D:/Projets R/IMIabgd/data/Gamma_SR11-20/70-SR13-Gamma_S70-6542654654221/",
+      input_dir = "./data/Gamma_SR11-20/70-SR13-Gamma_S70-6542654654221/",
       input_filename = "70-SR13-Gamma_S70_L001_R1R2_001",
       input_ext = ".vdjca",
       check_input_filename = TRUE,
@@ -213,7 +252,8 @@ test_that("run_command_vdj gives correct command to console with specific `repor
     paste0(
       "java -Xmx4g -Xms3g -jar  D:/Maria/Maria_Analysis/mixcr-2.1.7/mixcr.jar ",
       "assemble -OcloneFactoryParameters.dParameters.absoluteMinScore=10 ",
-      "--report testReport.log  70-SR13-Gamma_S70_L001_R1R2_001.vdjca ",
+      "--report testReport.log  ",
+      "70-SR13-Gamma_S70_L001_R1R2_001.vdjca ",
       "70-SR13-G.clns"
     )
   )
@@ -225,7 +265,7 @@ test_that("align_fastq_to_vdjca gives correct command to console with no report.
       java_param = "java -Xmx4g -Xms3g -jar",
       path_vdjtools = "",
       path_mixcr = "D:/Maria/Maria_Analysis/mixcr-2.1.7/mixcr.jar",
-      input_dir = "D:/Projets R/IMIabgd/data/Gamma_SR11-20/70-SR13-Gamma_S70-6542654654221/",
+      input_dir = "./data/Gamma_SR11-20/70-SR13-Gamma_S70-6542654654221/",
       input_filename = "70-SR13-Gamma_S70_L001_R1R2_001",
       input_ext = ".vdjca",
       check_input_filename = TRUE,
@@ -272,8 +312,8 @@ test_that("run_command_vdj gives an error when length(`input_dir`) !=  length(`i
       java_param = "java -Xmx4g -Xms3g -jar",
       path_vdjtools = "",
       path_mixcr = "D:/Maria/Maria_Analysis/mixcr-2.1.7/mixcr.jar",
-      input_dir = "D:/Projets R/IMIabgd/data/Gamma_SR11-20/",
-      input_filename = c("70-SR13-Gamma_S70_L001_R1R2_001","71-SR14-Gamma_S71_L001_R1R2_001"),
+      input_dir = "./data/Gamma_SR11-20/",
+      input_filename = c("70-SR13-Gamma_S70_L001_R1R2_001", "71-SR14-Gamma_S71_L001_R1R2_001"),
       input_ext = ".vdjca",
       check_input_filename = TRUE,
       output_filename = "auto",
@@ -283,9 +323,11 @@ test_that("run_command_vdj gives an error when length(`input_dir`) !=  length(`i
       replace = FALSE,
       string_only = TRUE
     ),
-    paste0("`input_dir` must be a character vector of length 1 or equal to length of input_filename.","\n",
-           "Length of `input_dir`: 1","\n",
-           "Length of `input_filename`: 2" )
+    paste0(
+      "`input_dir` must be a character vector of length 1 or equal to length of input_filename.", "\n",
+      "Length of `input_dir`: 1", "\n",
+      "Length of `input_filename`: 2"
+    )
   )
 })
 
@@ -295,7 +337,7 @@ test_that("run_command_vdj gives an error if `input_filename` doesn't exist in `
       java_param = "java -Xmx4g -Xms3g -jar",
       path_vdjtools = "",
       path_mixcr = "D:/Maria/Maria_Analysis/mixcr-2.1.7/mixcr.jar",
-      input_dir = "D:/Projets R/IMIabgd/data/Gamma_SR11-20/70-SR13-Gamma_S70-6542654654221/",
+      input_dir = "./data/Gamma_SR11-20/70-SR13-Gamma_S70-6542654654221/",
       input_filename = "doesnt_exist",
       input_ext = ".vdjca",
       check_input_filename = TRUE,
@@ -310,12 +352,13 @@ test_that("run_command_vdj gives an error if `input_filename` doesn't exist in `
 })
 
 test_that("run_command_vdj gives an error when the command has status 1 (=error)", {
+  skip("Skip because the error messages from console go into testthat.")
   # the command doens't exist.
   expect_error(run_command_vdj(
     java_param = "java -Xmx4g -Xms3g -jar",
     path_vdjtools = "",
     path_mixcr = "D:/Maria/Maria_Analysis/mixcr-2.1.7/mixcr.jar",
-    input_dir = "D:/Projets R/IMIabgd/data/Gamma_SR11-20/70-SR13-Gamma_S70-6542654654221/",
+    input_dir = "./data/Gamma_SR11-20/70-SR13-Gamma_S70-6542654654221/",
     input_filename = "70-SR13-Gamma_S70_L001_R1R2_001",
     input_ext = ".vdjca",
     check_input_filename = TRUE,
@@ -326,12 +369,13 @@ test_that("run_command_vdj gives an error when the command has status 1 (=error)
     replace = TRUE,
     string_only = FALSE
   ))
+
   # an argument is missing.
   expect_error(run_command_vdj(
     java_param = "java -Xmx4g -Xms3g -jar",
     path_vdjtools = "",
     path_mixcr = "D:/Maria/Maria_Analysis/mixcr-2.1.7/mixcr.jar",
-    input_dir = "D:/Projets R/IMIabgd/data/Gamma_SR11-20/70-SR13-Gamma_S70-6542654654221/",
+    input_dir = "./data/Gamma_SR11-20/70-SR13-Gamma_S70-6542654654221/",
     input_filename = "70-SR13-Gamma_S70_L001_R1R2_001",
     input_ext = ".vdjca",
     check_input_filename = TRUE,
@@ -342,12 +386,13 @@ test_that("run_command_vdj gives an error when the command has status 1 (=error)
     replace = TRUE,
     string_only = FALSE
   ))
+
   # an argument is incorrect
   expect_error(run_command_vdj(
     java_param = "java -Xmx4g -Xms3g -jar",
     path_vdjtools = "",
     path_mixcr = "D:/Maria/Maria_Analysis/mixcr-2.1.7/mixcr.jar",
-    input_dir = "D:/Projets R/IMIabgd/data/Gamma_SR11-20/70-SR13-Gamma_S70-6542654654221/",
+    input_dir = "./data/Gamma_SR11-20/70-SR13-Gamma_S70-6542654654221/",
     input_filename = "70-SR13-Gamma_S70_L001_R1_001",
     input_ext = ".fastq.gz", # incorrect extension
     check_input_filename = TRUE,
