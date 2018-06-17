@@ -17,7 +17,7 @@ test_that("correct_paths adds `/` at the end when missing only if it's an existi
   expect_equal(correct_paths("D:/Maria/Maria_Analysis/mixcr-2.1.7/mixcr.jar"),"D:/Maria/Maria_Analysis/mixcr-2.1.7/mixcr.jar")
 })
 test_that("correct_paths work with path style ./xxx/", {
-  expect_equal(correct_paths("./data"),"D:/Projets R/IMIabgd/data/")
+  expect_equal(correct_paths("./testdata"),paste0(getwd(),"/testdata/"))
 })
 
 # check_path_program ----

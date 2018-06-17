@@ -2,3 +2,7 @@
 .Rhistory
 .RData
 .Ruserdata
+/vdjtools-1.1.7/*
+/mixcr-2.1.7/*
+/test/testthat/vdjtools-1.1.7/*
+/test/testthat/mixcr-2.1.7/*

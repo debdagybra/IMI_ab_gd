@@ -9,16 +9,11 @@
 correct_paths <- function(x) {
   if (!is.character(x)) stop("`x` must be a character vector.")
 
-  x <- ifelse(substr(x,1,1)==".",
-              yes=normalizePath(x, winslash = "/", mustWork = FALSE),
-              no=x)
+  x <- ifelse(substr(x, 1, 1) == ".",
+    yes = normalizePath(x, winslash = "/", mustWork = FALSE),
+    no = x
+  )
   x <- gsub("([/\\])", "/", x)
-  # hardcode ! ----
-  # avoid problem with relative path and package 'testthat"
-  x <- gsub("tests/testthat/", "", x)
-
-  # x <- normalizePath(x, winslash = "/", mustWork = FALSE)
-  # x <- gsub("(////)", "/", x)
 
   # add / at the end only if it's an existing directory
   x <- ifelse(dir.exists(x) & substr(x, nchar(x), nchar(x)) != "/",
@@ -28,9 +23,6 @@ correct_paths <- function(x) {
   x
 }
 
-test_func <- function() {
-  dirname(sys.frame(1)$ofile)
-}
 
 #' @title check_path_program
 #' @description check if the path to a program (.jar) is valid

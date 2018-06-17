@@ -1,8 +1,8 @@
 Package: IMIabgd
 Type: Package
 Title: Analyze Tcells data with mixcr and vdjtools
-Version: 0.0.0.9006
-Date: 2018-06-16
+Version: 0.0.0.9007
+Date: 2018-06-17
 Author: DEBOT damien
 Maintainer: DEBOT damien <damien.debot@gmail.com>
 Description: Functions that use mixcr and vdjtools to analyse Tcells data. 

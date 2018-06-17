@@ -1,11 +1,11 @@
 
-#' @title analyse_tcells
+#' @title analyse_tcr
 #' @description execute a list of commmand on all .fastq.gz files in `input_dir`
 #' @param java_param a character string containing java parameters
 #' @param path_vdjtools the path to vdjtools.jar
 #' @param path_mixcr the path to mixcr.jar
 #' @param input_dir directory where the files are (also look in sub-directories)
-#' @param tcell_type The type of Tcells to analyse (A, B, G or D).
+#' @param tcr_chain The type of Tcells to analyse (A, B, G or D).
 #'                  "auto" to let R detect the type of Tcells automatically.
 #' @param replace if TRUE, if the output file already exists, it will be replaced.
 #' @param string_only if TRUE, don't execute the command but returns it in a string
@@ -28,14 +28,14 @@
 
 
 
-analyse_tcells <- function(java_param="java -Xmx4g -Xms3g -jar",
-                           path_vdjtools,
-                           path_mixcr,
-                           input_dir,
-                           tcell_type="auto",
-                           replace=FALSE,
-                           string_only=FALSE,
-                           ...) {
+analyse_tcr <- function(java_param="java -Xmx4g -Xms3g -jar",
+                        path_vdjtools,
+                        path_mixcr,
+                        input_dir,
+                        tcr_chain="auto",
+                        replace=FALSE,
+                        string_only=FALSE,
+                        ...) {
   starttime <- proc.time()
   # checks args
   # java_param
@@ -62,8 +62,8 @@ analyse_tcells <- function(java_param="java -Xmx4g -Xms3g -jar",
   if (!dir.exists(input_dir)) {
     stop("`input_dir` must be a valid directory.")
   }
-  # tcell_type
-  tcell_type <- match.arg(tcell_type, c("auto", "A", "B", "G", "D"))
+  # tcr_chain
+  tcr_chain <- match.arg(tcr_chain, c("auto", "A", "B", "G", "D"))
   # replace
   if (!is.logical(replace)) stop("`replace` must be logical.")
   # string_only
@@ -90,7 +90,7 @@ analyse_tcells <- function(java_param="java -Xmx4g -Xms3g -jar",
       gsub(".fastq.gz", "", .)
     # determine the folder of this specific file
     input_dir_file <- paste0(dirname(files_fastq.gz[f]), "/")
-    input_parentdir_file <- paste0(dirname(input_dir_file),"/")
+    input_parentdir_file <- paste0(dirname(input_dir_file), "/")
 
     message(paste0(
       "Analyse file (", f, "/", length(files_fastq.gz), ") : ",
@@ -103,13 +103,13 @@ analyse_tcells <- function(java_param="java -Xmx4g -Xms3g -jar",
       input_filename, 1,
       gregexpr("-", input_filename)[[1]][2] + 1
     )
-    if (tcell_type == "auto") {
-      tcell_type <- toupper(substr(
+    if (tcr_chain == "auto") {
+      tcr_chain <- toupper(substr(
         short_input_filename,
         nchar(short_input_filename),
         nchar(short_input_filename)
       ))
-      if (!tcell_type %in% c("A", "B", "G", "D")) {
+      if (!tcr_chain %in% c("A", "B", "G", "D")) {
         stop(
           "Unable to autodetect Tcell type for file ",
           input_filename, "."
@@ -142,13 +142,13 @@ analyse_tcells <- function(java_param="java -Xmx4g -Xms3g -jar",
     command_txt <- c(command_txt, lastreturned_value)
 
 
-    # execute the command `exportClones TR` & Tcell_type
+    # execute the command `exportClones TR` & tcr_chain
     lastreturned_value <- export_clones(
       java_param = java_param, path_mixcr = path_mixcr,
       input_dir = input_dir_file, input_filename = basename(lastreturned_value),
-      #output_dir = input_parentdir_file,
-      output_filename = paste0(short_input_filename,"_clonesMin10)"),
-      tcell_type = tcell_type,
+      # output_dir = input_parentdir_file,
+      output_filename = paste0(short_input_filename, "_clonesMin10)"),
+      tcr_chain = tcr_chain,
       replace = replace, string_only = string_only, ...
     )
     command_txt <- c(command_txt, lastreturned_value)
@@ -160,7 +160,7 @@ analyse_tcells <- function(java_param="java -Xmx4g -Xms3g -jar",
   # endtime
   message(paste0("Done in ", round((proc.time() - starttime)[[3]], 2), " seconds"))
 
-  if (string_only == TRUE) return(command_txt)
+  if (string_only == TRUE) return(noquote(command_txt))
   invisible()
 }
 
@@ -260,7 +260,7 @@ align_fastq_to_vdjca <- function(java_param="java -Xmx4g -Xms3g -jar",
     command_vdj = "align -OvParameters.geneFeatureToAlign=VTranscript",
     report_name = report_name,
     replace = replace,
-    fullpath=FALSE,
+    fullpath = FALSE,
     string_only = string_only
   )
 }
@@ -297,6 +297,7 @@ assemble_vdjca_to_clns <- function(java_param="java -Xmx4g -Xms3g -jar",
 
   # TO DO add Tcells_type ----
   # to choose between Min10 or regular
+  # check if result is different when no need Min10
   run_command_vdj(
     java_param = java_param,
     path_vdjtools = "",
@@ -309,7 +310,7 @@ assemble_vdjca_to_clns <- function(java_param="java -Xmx4g -Xms3g -jar",
     command_vdj = "assemble -OcloneFactoryParameters.dParameters.absoluteMinScore=10",
     report_name = report_name,
     replace = replace,
-    fullpath=FALSE,
+    fullpath = FALSE,
     string_only = string_only
   )
 }
@@ -338,10 +339,10 @@ export_clones <- function(java_param="java -Xmx4g -Xms3g -jar",
                           input_dir,
                           input_filename,
                           output_filename,
-                          tcell_type="auto",
+                          tcr_chain="auto",
                           report_name="",
                           replace=FALSE,
-                          string_only=FALSE){
+                          string_only=FALSE) {
 
   #   #java -Xmx4g -Xms3g -jar path\mixcr.jar exportClones --chains TRG clones.clns TRGclones.txt
   #   #print("Cmd exportClones TRD/G")
@@ -352,14 +353,14 @@ export_clones <- function(java_param="java -Xmx4g -Xms3g -jar",
   #     system(paste(java.param,path_mixcr,
   # paste0("exportClones --chains TR",toupper(substr(input_filename,Length_id,Length_id))),
   #                  string_f,
-#   paste0('"',input_dir,substr(input_filename,1,Length_id),'_clonesMin10.clns"'),
+  #   paste0('"',input_dir,substr(input_filename,1,Length_id),'_clonesMin10.clns"'),
   #
   # paste0('"',input_parentdir,substr(input_filename,1,Length_id),"_TR",toupper(substr(input_filename,Length_id,Length_id)),'_clonesMin10.txt"')))
   #   } else message(paste0("File '",paste0(path,substr(input_filename,1,Length_id),"_TR",toupper(substr(input_filename,Length_id,Length_id)),"_clonesMin10.txt"),"' already exists"))
   #
 
-  # tcell_type
-  tcell_type <- match.arg(tcell_type, c("auto", "A", "B", "G", "D"))
+  # tcr_chain
+  tcr_chain <- match.arg(tcr_chain, c("auto", "A", "B", "G", "D"))
 
   run_command_vdj(
     java_param = java_param,
@@ -370,13 +371,12 @@ export_clones <- function(java_param="java -Xmx4g -Xms3g -jar",
     input_ext = ".clns",
     output_filename = output_filename,
     output_ext = ".txt",
-    command_vdj = paste0("exportClones --chains TR",tcell_type," "),
+    command_vdj = paste0("exportClones --chains TR", tcr_chain, " "),
     report_name = report_name,
     replace = replace,
-    fullpath=FALSE,
+    fullpath = FALSE,
     string_only = string_only
   )
-
 }
 
 
@@ -424,7 +424,7 @@ run_command_vdj <- function(java_param="java -Xmx4g -Xms3g -jar",
                             command_vdj,
                             report_name="",
                             replace=FALSE,
-                            fullpath = FALSE,
+                            fullpath = TRUE,
                             string_only=FALSE,
                             ...) {
 
@@ -436,161 +436,165 @@ run_command_vdj <- function(java_param="java -Xmx4g -Xms3g -jar",
 
 
   # checks args ----
-    # java_param
-    if (!is.character(java_param)) {
-      stop(
-        "`java_param` must be a character vector of length 1.",
-        "e.g. `java -Xmx4g -Xms3g -jar`"
-      )
-    }
-    if (length(java_param) > 1) {
-      stop(
-        "`java_param` must be a character vector of length 1.",
-        "e.g. `java -Xmx4g -Xms3g -jar`"
-      )
-    }
-    # path_vdjtools
-    if (path_vdjtools != "") path_vdjtools <- check_path_program(path_vdjtools, program = "vdjtools")
-    # path_mixcr
-    if (path_mixcr != "") path_mixcr <- check_path_program(path_mixcr, program = "mixcr")
-    # input_dir
-    if (!is.character(input_dir)) stop("`input_dir` must be a character vector of length 1.")
-    if (length(input_filename) > 1 & length(input_dir) != length(input_filename)) {
-      stop(
-        "`input_dir` must be a character vector of length 1 or equal to length of input_filename.", "\n",
-        "Length of `input_dir`: ", length(input_dir), "\n",
-        "Length of `input_filename`: ", length(input_filename)
-      )
-    }
-    input_dir <- correct_paths(input_dir)
-    if (any(!dir.exists(input_dir))) {
-      stop(
-        "`input_dir` must be a valid directory.", "\n",
-        "Invalid: ", "\n",
-        paste(input_dir[!dir.exists(input_dir)], collapse = "\n")
-      )
-    }
-    # check_input_filename
-    if (!is.logical(check_input_filename)) stop("`check_input_filename` must be TRUE or FALSE")
-    # input_ext
-    if (missing(input_ext)) {
-      stop("`input_ext` is missing.")
-    }
-    if (!is.character(input_ext)) {
-      stop("`input_ext` must be a character vector of length 1, starting with a dot.")
-    }
-    if (nchar(input_ext) == 0) {
-      stop("`input_ext` must be a non-empty character vector of length 1, starting with a dot.")
-    }
-    if (substr(input_ext, 1, 1) != ".") {
-      stop(
-        "`input_ext` must be a character vector of length 1, starting with a dot.", "\n",
-        "Did you mean: `.", input_ext, "` ?"
-      )
-    }
-    # input_filename
-    if (!is.character(input_filename)) stop("`input_filename` must be a character vector.")
-    # if (length(input_filename) > 1) stop("`input_filename` must be a character vector.")
-    if (all(input_filename %in% c("", "auto"))) {
-      input_filename <- list.files(
-        path = input_dir, recursive = TRUE,
-        full.names = TRUE, pattern = input_ext
-      ) %>%
-        .[substr(., nchar(.) - nchar(input_ext) + 1, nchar(.)) == input_ext] %>%
-        gsub("//", "/", .) %>%
-        unique()
-      # input_dir for each file
-      input_dir <- paste0(dirname(input_filename), "/")
-      input_filename <- basename(input_filename)
-    }
+  # java_param
+  if (!is.character(java_param)) {
+    stop(
+      "`java_param` must be a character vector of length 1.",
+      "e.g. `java -Xmx4g -Xms3g -jar`"
+    )
+  }
+  if (length(java_param) > 1) {
+    stop(
+      "`java_param` must be a character vector of length 1.",
+      "e.g. `java -Xmx4g -Xms3g -jar`"
+    )
+  }
+  # path_vdjtools
+  if (path_vdjtools != "") path_vdjtools <- check_path_program(path_vdjtools, program = "vdjtools")
+  # path_mixcr
+  if (path_mixcr != "") path_mixcr <- check_path_program(path_mixcr, program = "mixcr")
+  # input_dir
+  if (!is.character(input_dir)) stop("`input_dir` must be a character vector of length 1.")
+  if (length(input_filename) > 1 & length(input_dir) != length(input_filename)) {
+    stop(
+      "`input_dir` must be a character vector of length 1 or equal to length of input_filename.", "\n",
+      "Length of `input_dir`: ", length(input_dir), "\n",
+      "Length of `input_filename`: ", length(input_filename)
+    )
+  }
+  input_dir <- correct_paths(input_dir)
+  if (any(!dir.exists(input_dir))) {
+    stop(
+      "`input_dir` must be a valid directory.", "\n",
+      "Invalid: ", "\n",
+      paste(input_dir[!dir.exists(input_dir)], collapse = "\n")
+    )
+  }
+  # check_input_filename
+  if (!is.logical(check_input_filename)) stop("`check_input_filename` must be TRUE or FALSE")
+  # input_ext
+  if (missing(input_ext)) {
+    stop("`input_ext` is missing.")
+  }
+  if (!is.character(input_ext)) {
+    stop("`input_ext` must be a character vector of length 1, starting with a dot.")
+  }
+  if (nchar(input_ext) == 0) {
+    stop("`input_ext` must be a non-empty character vector of length 1, starting with a dot.")
+  }
+  if (substr(input_ext, 1, 1) != ".") {
+    stop(
+      "`input_ext` must be a character vector of length 1, starting with a dot.", "\n",
+      "Did you mean: `.", input_ext, "` ?"
+    )
+  }
+  # input_filename
+  if (!is.character(input_filename)) stop("`input_filename` must be a character vector.")
+  # if (length(input_filename) > 1) stop("`input_filename` must be a character vector.")
+  if (all(input_filename %in% c("", "auto"))) {
+    input_filename <- list.files(
+      path = input_dir, recursive = TRUE,
+      full.names = TRUE, pattern = input_ext
+    ) %>%
+      .[substr(., nchar(.) - nchar(input_ext) + 1, nchar(.)) == input_ext] %>%
+      gsub("//", "/", .) %>%
+      unique()
+    # input_dir for each file
+    input_dir <- paste0(dirname(input_filename), "/")
+    input_filename <- basename(input_filename)
+  }
 
-    input_filename <- correct_paths(input_filename)
-    if (check_input_filename == TRUE) input_filename <- gsub(input_ext, "", input_filename) # erase file extension
-    if (any(!file.exists(paste0(input_dir, input_filename, input_ext)) & check_input_filename == TRUE)) {
+  input_filename <- correct_paths(input_filename)
+  if (check_input_filename == TRUE) input_filename <- gsub(input_ext, "", input_filename) # erase file extension
+  if (any(!file.exists(paste0(input_dir, input_filename, input_ext)) & check_input_filename == TRUE)) {
+    stop(
+      "`input_filename`+`input_ext` must be a valid file in `input_dir` directory.", "\n",
+      "Your file: ", input_filename, input_ext, " doesn't exist in ", input_dir, "."
+    )
+  }
+  # outputfilename
+  if (all(output_filename == "auto")) {
+    if (any(is.na(gregexpr("-", input_filename)[[1]][2]))) {
       stop(
-        "`input_filename`+`input_ext` must be a valid file in `input_dir` directory.", "\n",
-        "Your file: ", input_filename, input_ext, " doesn't exist in ", input_dir, "."
+        "`output_filename` can't be determined automatically because ",
+        "at least one of the files doensn't contain `-` in his title.", "\n",
+        "Your file(s): ", "\n", paste(paste0(input_filename, input_ext), collapse = "\n")
       )
+    } else {
+      output_filename <- substr(input_filename, 1, gregexpr("-", input_filename)[[1]][2] + 1)
     }
-    # outputfilename
-    if (all(output_filename == "auto")) {
-      if (any(is.na(gregexpr("-", input_filename)[[1]][2]))) {
+  }
+  if (length(output_filename) == 1 & length(input_filename) > 1) {
+    output_filename <- rep(output_filename, length(input_filename))
+  }
+  if (length(output_filename) != length(input_filename)) {
+    stop("`output_ext` must be a character vector with the same length than `input_filename`.")
+  }
+  # output_ext
+  if (!is.character(output_ext)) {
+    stop("`output_ext` must be a character vector of length 1, starting with a dot.")
+  }
+  if (any(nchar(output_ext) == 0 & nchar(output_filename) > 0)) {
+    stop("`output_ext` can't be empty if `output_filename` isn't also empty.")
+  }
+  if (nchar(output_ext) > 0 && substr(output_ext, 1, 1) != ".") {
+    stop(
+      "`output_ext` must be a character vector of length 1, starting with a dot.", "\n",
+      "Did you mean: `.", output_ext, "` ?"
+    )
+  }
+  # output_dir
+  if (base::missing(output_dir)) output_dir <- input_dir
+  if (!is.character(output_dir)) {
+    stop("`output_dir` must be a character vector of length 1 or same length than `output_filename`")
+  }
+  if (length(output_filename) > 1 & length(output_dir) != length(output_filename)) {
+    stop(
+      "`output_dir` must be a character vector of length 1 or equal to length of output_filename", "\n",
+      "Length of `output_dir`: ", length(output_dir), "\n",
+      "Length of `output_filename`: ", length(output_filename)
+    )
+  }
+  output_dir <- correct_paths(output_dir)
+  if (any(!dir.exists(output_dir))) {
+    stop(
+      "`output_dir` must be a valid directory.", "\n",
+      "Invalid: ", "\n",
+      paste(output_dir[!dir.exists(output_dir)], collapse = "\n")
+    )
+  }
+  # command_vdj
+  if (!is.character(command_vdj)) {
+    stop("`command_vdj` must be a character vector of length 1.")
+    }
+  # report_name
+  if (!is.character(report_name)) {
+    stop("`report_name` must be a character vector of length 1 or NULL.")
+    }
+  report_name <- gsub(".log", "", report_name) # erase file extension
+  # replace
+  if (!is.logical(replace)) stop("`replace` must be logical.")
+  # string_only
+  if (!is.logical(string_only)) stop("`string_only` must be logical.")
+  # ...
+  if (any(names(list(...)) %in% "tcr_chain")) {
+    # tcr_chain
+    tcr_chain <- match.arg(list(...)$tcr_chain, c("auto", "A", "B", "G", "D"))
+    if (tcr_chain == "auto") {
+      tcr_chain <- toupper(substr(
+        input_filename,
+        nchar(input_filename),
+        nchar(input_filename)
+      ))
+      if (!tcr_chain %in% c("A", "B", "G", "D")) {
         stop(
-          "`output_filename` can't be determined automatically because ",
-          "at least one of the files doensn't contain `-` in his title.", "\n",
-          "Your file(s): ", "\n", paste(paste0(input_filename, input_ext), collapse = "\n")
+          "Unable to autodetect Tcell type for file ",
+          input_filename, "."
         )
-      } else {
-        output_filename <- substr(input_filename, 1, gregexpr("-", input_filename)[[1]][2] + 1)
       }
+      command_vdj <- gsub("auto", tcr_chain, command_vdj)
     }
-    if (length(output_filename) == 1 & length(input_filename) > 1) {
-      output_filename <- rep(output_filename, length(input_filename))
-    }
-    if (length(output_filename) != length(input_filename)) {
-      stop("`output_ext` must be a character vector with the same length than `input_filename`.")
-    }
-    # output_ext
-    if (!is.character(output_ext)) {
-      stop("`output_ext` must be a character vector of length 1, starting with a dot.")
-    }
-    if (any(nchar(output_ext) == 0 & nchar(output_filename) > 0)) {
-      stop("`output_ext` can't be empty if `output_filename` isn't also empty.")
-    }
-    if (nchar(output_ext) > 0 && substr(output_ext, 1, 1) != ".") {
-      stop(
-        "`output_ext` must be a character vector of length 1, starting with a dot.", "\n",
-        "Did you mean: `.", output_ext, "` ?"
-      )
-    }
-    # output_dir
-    if (base::missing(output_dir)) output_dir <- input_dir
-    if (!is.character(output_dir)) {
-      stop("`output_dir` must be a character vector of length 1 or same length than `output_filename`")
-    }
-    if (length(output_filename) > 1 & length(output_dir) != length(output_filename)) {
-      stop(
-        "`output_dir` must be a character vector of length 1 or equal to length of output_filename", "\n",
-        "Length of `output_dir`: ", length(output_dir), "\n",
-        "Length of `output_filename`: ", length(output_filename)
-      )
-    }
-    output_dir <- correct_paths(output_dir)
-    if (any(!dir.exists(output_dir))) {
-      stop(
-        "`output_dir` must be a valid directory.", "\n",
-        "Invalid: ", "\n",
-        paste(output_dir[!dir.exists(output_dir)], collapse = "\n")
-      )
-    }
-    # command_vdj
-    if (!is.character(command_vdj)) stop("`command_vdj` must be a character vector of length 1.")
-    # report_name
-    if (!is.character(report_name)) stop("`report_name` must be a character vector of length 1 or NULL.")
-    report_name <- gsub(".log", "", report_name) # erase file extension
-    # replace
-    if (!is.logical(replace)) stop("`replace` must be logical.")
-    # string_only
-    if (!is.logical(string_only)) stop("`string_only` must be logical.")
-    # ...
-    if( any(names(list(...)) %in% "Tcell_type")) {
-      # tcell_type
-      tcell_type <- match.arg(list(...)$tcell_type, c("auto", "A", "B", "G", "D"))
-      if (tcell_type == "auto") {
-        tcell_type <- toupper(substr(
-          input_filename,
-          nchar(input_filename),
-          nchar(input_filename)
-        ))
-        if (!tcell_type %in% c("A", "B", "G", "D")) {
-          stop(
-            "Unable to autodetect Tcell type for file ",
-            input_filename, "."
-          )
-        }
-        command_vdj <- gsub("auto",tcell_type,command_vdj)
-      }
-    }
+  }
   # end checks args
 
   # create command ----
@@ -599,26 +603,38 @@ run_command_vdj <- function(java_param="java -Xmx4g -Xms3g -jar",
     # write the command(s)
     command_request <- c(command_request, paste(
       java_param, # e.g.  'java -Xmx4g -Xms3g -jar'
-      path_vdjtools,
-      path_mixcr,
+      if (path_vdjtools!="") {
+        paste0("\"", path_vdjtools,"\"")
+      } else path_vdjtools,
+      if (path_mixcr!="") {
+        paste0("\"", path_mixcr,"\"")
+      } else path_mixcr,
       command_vdj,
       if (report_name == "") {
         report_name
       } else {
         paste0("--report ", report_name, ".log") # e.g.  '--report alignmentReport.log'
       },
-      if (replace == TRUE) "-f" else "",         # e.g.  '-f'
-      paste0(                                    # e.g.  'input_filename.vdjca'
-        if (fullpath==TRUE & check_input_filename == TRUE) input_dir[i] else "",
+      if (replace == TRUE) "-f" else "", # e.g.  '-f'
+      # TO DO ----
+      # if fullpath, must be between double quotes
+      # ok to keep space
+
+      paste0( # e.g.  'input_filename.vdjca'
+        if (fullpath == TRUE & check_input_filename == TRUE) paste0("\"", input_dir[i]) else "",
         input_filename[i],
-        if (check_input_filename == TRUE) input_ext else ""
+        if (check_input_filename == TRUE) input_ext else "",
+        if (fullpath == TRUE & check_input_filename == TRUE) "\"" else ""
       ),
-      paste0(if (fullpath==TRUE) output_dir[i] else "",
-             output_filename[i], output_ext), # e.g.  'output_file.clns
+      paste0(
+        "\"", if (fullpath == TRUE) output_dir[i] else "",
+        output_filename[i], output_ext
+      ), # e.g.  'output_file.clns
+      "\"",
       sep = " "
     ))
   }
-  if (string_only == TRUE) return(command_request)
+  if (string_only == TRUE) return(noquote(command_request))
 
   # execute the command in the console ----
   # but only if replace = TRUE or the output file doesn't exist yet
@@ -651,12 +667,12 @@ run_command_vdj <- function(java_param="java -Xmx4g -Xms3g -jar",
           "The reason might be that:", "\n",
           " - the command does not exist or contains an error ", "\n",
           " - a required argument is missing or incorrect ", "\n",
-          " - the `fullpath` argument should be different (now: ",!fullpath,").","\n","\n",
-          status[[2]],"\n",
+          " - the `fullpath` argument should be different (now: ", !fullpath, ").", "\n", "\n",
+          status[[2]], "\n",
           status[[1]]
         )
       } else {
-        cat(paste0(paste(status, collapse="\n"),"\n"))
+        cat(paste0(paste(status, collapse = "\n"), "\n"))
       }
 
       # check that the file is created
@@ -664,10 +680,11 @@ run_command_vdj <- function(java_param="java -Xmx4g -Xms3g -jar",
         warning("Output file: `", paste0(output_dir[i], output_filename[i], output_ext), "` not found.")
       }
     } else {
-      message(paste0("File '", paste0(output_dir[i], output_filename[i], output_ext), "' already exists and is not replaced."))
+      message(paste0("File '", paste0(output_dir[i], output_filename[i], output_ext),
+                     "' already exists and is not replaced."))
     }
   }
 
-  #return names of created files
+  # return names of created files
   paste0(input_dir, output_filename, output_ext)
 }
